@@ -1,0 +1,1238 @@
+---
+title: "Statistical Learning Project"
+author: "Onur Alp Güvercin, 2072249, Su Doğan, 2071957, Işıkay Karakuş, 2071938"
+date: "July 17, 2023"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# House Price Prediction: \Advanced Regression Techniques
+
+# 1.Aim of The Project
+
+House pricing is of utmost importance in our world, as it impacts
+individuals, families, and the economy at large. The purchase of a house
+represents a significant financial decision, often constituting a
+substantial portion of one's wealth. The fluctuation of house prices
+directly influences personal financial stability and the ability to
+build assets. Moreover, the real estate market, driven by house prices,
+contributes significantly to economic activity, including property
+sales, construction, and associated industries.
+
+The aim of our project is to develop a predictive model for house
+pricing. This project holds great importance considering the large
+number of people buying houses every year. Housing affordability is a
+critical issue, and accurate prediction models can help address it. By
+analyzing market trends and evaluating property values, our model aims
+to provide individuals, sellers, and industry professionals with
+valuable insights for making informed decisions. The project contributes
+to understanding housing market dynamics, assisting with financial
+planning, and promoting fair and transparent practices in the real
+estate sector.
+
+Through our research project, our primary objective is to illuminate the
+key factors that influence house prices, discern the most impactful
+among them, and formulate an effective estimation framework for
+predicting the price of a house based on its specific characteristics.
+
+# 2- PREPERATION
+
+# 2.1.Import Libraries
+
+We will import the necessary packages for our analysis;
+
+```{r, include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+# Import the libraries
+library(rworldmap)
+library(knitr)
+library(ggplot2) 
+library(readr) 
+library(MASS)
+library(dplyr)
+library(lars)
+library(moments)
+library(caret)
+library(corrplot)
+library(gbm)
+library(glmnet)
+library(effectsize)
+```
+
+For this project, we have selected the "House Prices - Advanced
+Regression Techniques" dataset, which consists of 3 csv files (train,
+test, and sample submission) and can be found on the Kaggle platform at
+the following link:
+<https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques>
+
+```{r,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+#start
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+sample <- read.csv("sample_submission.csv")
+summary(train)
+```
+
+# 2.2 Data Component
+
+-   MSSubClass: Identifies the type of dwelling involved in the sale.
+-   MSZoning: Identifies the general zoning classification of the sale.
+-   LotFrontage: Linear feet of street connected to property
+-   LotArea: Lot size in square feet
+-   Street: Type of road access to property
+-   Alley: Type of alley access to property
+-   LotShape: General shape of property
+-   LandContour: Flatness of the property
+-   Utilities: Type of utilities available
+-   LotConfig: Lot configuration
+-   LandSlope: Slope of property
+-   Neighborhood: Physical locations within Ames city limits
+-   Condition1: Proximity to various conditions
+-   Condition2: Proximity to various conditions (if more than one is
+    present)
+-   BldgType: Type of dwelling
+-   HouseStyle: Style of dwelling
+-   OverallQual: Rates the overall material and finish of the house
+-   OverallCond: Rates the overall condition of the house
+-   YearBuilt: Original construction date
+-   YearRemodAdd: Remodel date (same as construction date if no
+    remodeling or additions)
+-   RoofStyle: Type of roof
+-   RoofMatl: Roof material
+-   Exterior1st: Exterior covering on house
+-   Exterior2nd: Exterior covering on house (if more than one material)
+-   MasVnrType: Masonry veneer type
+-   MasVnrArea: Masonry veneer area in square feet
+-   ExterQual: Evaluates the quality of the material on the exterior
+-   ExterCond: Evaluates the present condition of the material on the
+    exterior
+-   Foundation: Type of foundation
+-   BsmtQual: Evaluates the height of the basement
+-   BsmtCond: Evaluates the general condition of the basement
+-   BsmtExposure: Refers to walkout or garden level walls
+-   BsmtFinType1: Rating of basement finished area
+-   BsmtFinSF1: Type 1 finished square feet
+-   BsmtFinType2: Rating of basement finished area (if multiple types)
+-   BsmtFinSF2: Type 2 finished square feet
+-   BsmtUnfSF: Unfinished square feet of basement area
+-   TotalBsmtSF: Total square feet of basement area
+-   Heating: Type of heating
+-   HeatingQC: Heating quality and condition
+-   CentralAir: Central air conditioning
+-   Electrical: Electrical system
+-   1stFlrSF: First Floor square feet
+-   2ndFlrSF: Second floor square feet
+-   LowQualFinSF: Low quality finished square feet (all floors)
+-   GrLivArea: Above grade (ground) living area square feet
+-   BsmtFullBath: Basement full bathrooms
+-   BsmtHalfBath: Basement half bathrooms
+-   FullBath: Full bathrooms above grade
+-   HalfBath: Half baths above grade
+-   Bedroom: Bedrooms above grade (does NOT include basement bedrooms)
+-   Kitchen: Kitchens above grade
+-   KitchenQual: Kitchen quality
+-   TotRmsAbvGrd: Total rooms above grade (does not include bathrooms)
+-   Functional: Home functionality (Assume typical unless deductions are
+    warranted)
+-   Fireplaces: Number of fireplaces
+-   FireplaceQu: Fireplace quality
+-   GarageType: Garage location
+-   GarageYrBlt: Year garage was built
+-   GarageFinish: Interior finish of the garage
+-   GarageCars: Size of garage in car capacity
+-   GarageArea: Size of garage in square feet
+-   GarageQual: Garage quality
+-   GarageCond: Garage condition
+-   PavedDrive: Paved driveway
+-   WoodDeckSF: Wood deck area in square feet
+-   OpenPorchSF: Open porch area in square feet
+-   EnclosedPorch: Enclosed porch area in square feet
+-   3SsnPorch: Three season porch area in square feet
+-   ScreenPorch: Screen porch area in square feet
+-   PoolArea: Pool area in square feet
+-   PoolQC: Pool quality
+-   Fence: Fence quality
+-   MiscFeature: Miscellaneous feature not covered in other categories
+-   MiscVal: \$Value of miscellaneous feature
+-   MoSold: Month Sold (MM)
+-   YrSold: Year Sold (YYYY)
+-   SaleType: Type of sale
+-   SaleCondition: Condition of sale
+
+```{r, fig.width=4, fig.height = 2,include=TRUE, warning = FALSE }
+str(train)
+str(test)
+str(sample)
+
+# Get the numeric column names from your dataset (excluding "id")
+numeric_cols <- names(train)[sapply(train, is.numeric) & names(train) != "id"]
+
+# Create an empty list to store the plots
+plots <- list()
+
+# Loop through each numeric column and create the plot
+for (col in numeric_cols) {
+  plot <- ggplot(train, aes_string(y = "SalePrice", x = col)) + geom_point()
+  
+  plots[[col]] <- plot
+}
+
+# View the plots
+plots
+```
+
+Here, we have removed some instances that appeared to have exceptionally
+high values when compared to the rest of the dataset. This was done to
+reduce model complexity and minimize the risk of overfitting.
+
+#2.3 Data Cleaning
+
+In this section, we present a description of the pre-processing
+activities carried out on our dataset, namely the "House Price
+Prediction: Advanced Regression Techniques". The dataset encompasses a
+multitude of variables, and our objective was to eliminate outliers
+while comprehending the nature and characteristics of each variable,
+differentiating between numeric, categorical, and integer types.
+Handling missing values is an important step in data preprocessing. In
+the combined dataset, we need to consider that missing values (NA) may
+not always indicate actual missing data. For example, in the case of the
+Alley feature, NA represents the absence of an alley access to the
+house. To handle these cases, we need to code these NA values as "None"
+to accurately capture this information.
+
+By coding NA values as "None" in the Alley feature, we ensure that the
+variable correctly reflects the absence of alley access for the
+corresponding houses. This coding allows us to retain the meaningful
+information contained in the data and avoid any misinterpretation or
+biases that could arise from treating NA values as missing data.
+
+After addressing such cases where NA has a specific meaning, we can
+proceed to handle other missing values in the dataset using appropriate
+imputation techniques or further analysis based on the specific
+characteristics of the variables.
+
+Next, to streamline and expedite the data cleaning process, we decided
+to merge the train and test datasets. To accomplish this, we introduced
+a new column named "isTrain" in both the train and test datasets. For
+instances originating from the train dataset, the "isTrain" column was
+set to "1", while for instances originating from the test dataset, it
+was set to "0". Additionally, we appended a "SalePrice" column to the
+test dataset and assigned "NA" as its value. Finally, we combined the
+train and test datasets using the "rbind" function.
+
+```{r,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+# Combining train and test data for quicker data prep
+# Create a new column 'isTrain' in the 'train' dataset and set it to 1
+train$isTrain <- 1
+# Create a new column 'isTrain' in the 'test' dataset and set it to 0
+test$isTrain <- 0
+# Add 'SalePrice' column to 'test' dataset and set it to NA
+test$SalePrice <- NA
+# Combine 'train' and 'test' datasets using rbind
+combined <- rbind(train, test)
+
+# Check for missing values in combined set
+Missing_indices_c <- sapply(combined, function(x) sum(is.na(x)))
+Missing_Summary_c <- data.frame(index = names(combined), 
+                                Missing_Values = Missing_indices_c, 
+                                Data_Type = sapply(combined, class))
+Missing_Summary_c <- Missing_Summary_c[Missing_Summary_c$Missing_Values > 0, ]
+Missing_Summary_c
+
+# Here we get insight about combined dataset and variable types. Now we will handle missing values
+
+# Imputing missing Lot Frontage by the median
+combined$LotFrontage[which(is.na(combined$LotFrontage))] <- 
+  median(combined$LotFrontage,na.rm = TRUE)
+# Changing NA in GarageYrBlt to None
+combined$GarageYrBlt[which(is.na(combined$GarageYrBlt))] <- 0 
+
+# Create a function to handle missing values
+replace_missing <- function(var) {
+  var1 <- as.character(var)
+  var1[is.na(var)] <- "None"
+  var <- as.factor(var1)
+  return(var)
+}
+
+# Apply the function to multiple variables
+combined$Alley <- replace_missing(combined$Alley)
+
+combined$MasVnrType <- replace_missing(combined$MasVnrType)
+
+combined$MasVnrArea <- replace_missing(combined$MasVnrArea)
+
+combined$BsmtQual <- replace_missing(combined$BsmtQual)
+
+combined$BsmtCond <- replace_missing(combined$BsmtCond)
+
+combined$BsmtExposure <- replace_missing(combined$BsmtExposure)
+
+combined$BsmtFinType1 <- replace_missing(combined$BsmtFinType1)
+
+combined$BsmtFinType2 <- replace_missing(combined$BsmtFinType2)
+
+combined$FireplaceQu <- replace_missing(combined$FireplaceQu)
+
+combined$GarageType <- replace_missing(combined$GarageType)
+
+combined$GarageFinish <- replace_missing(combined$GarageFinish)
+
+combined$GarageQual <- replace_missing(combined$GarageQual)
+
+combined$GarageCond <- replace_missing(combined$GarageCond)
+
+combined$PoolQC <- replace_missing(combined$PoolQC)
+
+combined$Fence <- replace_missing(combined$Fence)
+
+combined$MiscFeature <- replace_missing(combined$MiscFeature)
+
+# Check missing values again
+# Check for missing values in combined set
+Missing_indices_c <- sapply(combined, function(x) sum(is.na(x)))
+Missing_Summary_c <- data.frame(index = names(combined), 
+                                Missing_Values = Missing_indices_c, 
+                                Data_Type = sapply(combined, class))
+Missing_Summary_c <- Missing_Summary_c[Missing_Summary_c$Missing_Values > 0, ]
+Missing_Summary_c
+
+# Remove missing values using na.omit()
+combined_clean <- combined[complete.cases(combined[, !names(combined) 
+                                                   %in% "SalePrice"]), ]
+
+# Check again
+Missing_indices_clean <- sapply(combined_clean, function(x) sum(is.na(x)))
+Missing_Summary_clean <- data.frame(index = names(combined_clean), 
+                                    Missing_Values = Missing_indices_clean, 
+                                    Data_Type = sapply(combined_clean, class))
+Missing_Summary_clean <- Missing_Summary_clean[Missing_Summary_clean$
+                                                 Missing_Values > 0, ]
+Missing_Summary_clean
+```
+
+```{r,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+# Determine numeric columns
+numeric_columns <- combined_clean %>%
+  select_if(is.numeric) %>%
+  select(-matches("Id|isTrain")) %>%
+  names()
+
+# Print the data types of the numeric columns in the original 'combined_clean' 
+#dataset
+column_types <- sapply(combined_clean[, numeric_columns], class)
+
+# Determine the skewness of each numeric variable
+skew <- sapply(numeric_columns, function(x) skewness(combined_clean[[x]], 
+                                                     na.rm = TRUE))
+
+# Determine a threshold skewness and transform variables above the threshold
+threshold <- 0.75
+skew_above_threshold <- skew[skew > threshold]
+
+# Transform excessively skewed features with log(x + 1)
+for (x in names(skew_above_threshold)) {
+  combined_clean[[x]] <- log(combined_clean[[x]] + 1)
+}
+```
+
+# 2.4 Splitting the data
+
+Our primary focus is to gain valuable insights from the data that will
+be useful for model training. To achieve this, we will split the
+combined dataset into a training set and a test set. The training set
+will be used for exploratory data analysis (EDA) and model training,
+while the test set will be used to evaluate the performance of the
+trained model.
+
+```{r,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+
+# Create a logical vector indicating which rows are in the train set
+isTrain <- combined_clean$isTrain == 1
+# Split the combined data into train and test sets based on the logical vector
+train <- combined_clean[isTrain, ]
+test <- combined_clean[!isTrain, ]
+
+# Set the seed for reproducibility
+set.seed(123)
+
+# Determine the sample size for the training set
+smp_size <- floor(0.75 * sum(isTrain))
+
+# Randomly sample the row indices for the training set
+train_ind <- sample(which(isTrain), size = smp_size)
+
+# Create the training and validation sets
+train_new <- train[train_ind, ]
+validate <- train[-train_ind, ]
+
+# Remove the Id and isTrain columns from the training and validation sets
+train_new <- train_new[, !(names(train_new) %in% c("Id", "isTrain"))]
+validate <- validate[, !(names(validate) %in% c("Id", "isTrain"))]
+```
+
+# 3. Exploratory Data Analysis
+
+To perform an ANOVA (Analysis of Variance) analysis for categorical
+variables, we can examine the relationship between each categorical
+variable and the target variable (SalePrice) by assessing the variation
+in SalePrice across different categories of the categorical variable.
+This analysis helps determine if there are significant differences in
+the mean SalePrice among the categories.
+
+```{r,fig.width=8, fig.height = 4,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+# Select the categorical columns from the train dataset (including factor 
+#and character variables)
+categorical_columns <- combined_clean %>%
+  select_if(function(x) is.factor(x) || is.character(x)) %>%
+  select(-matches("Id|isTrain")) %>%
+  names()
+
+# Convert the selected categorical columns to factors
+combined_clean[, categorical_columns] <- lapply(combined_clean[, categorical_columns], 
+                                                as.factor)
+
+correlation_coefficients <- numeric(length(categorical_columns))
+
+for (i in seq_along(categorical_columns)) {
+  cat_var <- categorical_columns[i]
+  
+  # Calculate the mean SalePrice for each category of the categorical variable
+  mean_sales_price <- combined_clean %>%
+    group_by(.data[[cat_var]]) %>%
+    summarize(mean_sale_price = mean(SalePrice, na.rm = TRUE)) %>%
+    arrange(desc(mean_sale_price))
+  
+  # Perform an ANOVA test to calculate the correlation coefficient
+  formula <- as.formula(paste("SalePrice ~", cat_var))
+  anova_result <- anova(aov(formula, data = combined_clean))
+  eta_squared <- anova_result$`Sum Sq`[1] / (anova_result$`Sum Sq`[1] + 
+                                               anova_result$`Sum Sq`[2])
+  
+  # Check if eta_squared is NaN or Inf, if so, set correlation coefficient to 0
+  if (is.nan(eta_squared) || is.infinite(eta_squared)) {
+    eta_squared <- 0
+  }
+  # Store the correlation coefficient in the vector
+  correlation_coefficients[i] <- eta_squared
+}
+
+# Create a data frame to store the correlation coefficients
+correlation_df <- data.frame(Categorical_Variable = categorical_columns, 
+                             Correlation_Coefficient = correlation_coefficients)
+
+# Convert the Correlation_Coefficient column to numeric
+correlation_df$Correlation_Coefficient <- as.numeric(correlation_df$
+                                                       Correlation_Coefficient)
+
+# Sort the data frame by the correlation coefficient in descending order
+correlation_df <- correlation_df[order(-correlation_df$
+                                         Correlation_Coefficient), ]
+
+# Display the top variables with the highest correlation coefficients
+top_variables <- head(correlation_df, n = 15)
+top_variables
+```
+
+OBSERVATIONS;
+
+ANOVA (Analysis of Variance) is a statistical method used for analyzing
+the differences between group means and determining whether these
+differences are statistically significant. In our case, we used it to
+calculate the correlation coefficients between categorical variables and
+the SalePrice, which is the target variable in our regression problem.
+
+The correlation coefficients obtained from ANOVA analysis help in
+identifying the categorical variables that have a stronger relationship
+with the SalePrice. Higher correlation coefficients indicate that the
+categorical variable has a more significant impact on the SalePrice and
+can be considered as a potentially important predictor.
+
+In our analysis, we obtained top 15 variables with highest correlation
+coefficients. Below, we show the top 5 among these 15 variables along
+with explaining the influence that they have on SalePrice.
+
+-   Neighborhood (Correlation coefficient: 0.5822): The neighborhood in
+    which a house is located appears to have the strongest influence on
+    the SalePrice. Houses in certain neighborhoods tend to have
+    significantly higher or lower prices.
+
+-   ExterQual (Correlation coefficient: 0.4757): The quality of the
+    exterior material has a notable impact on the SalePrice.Houses with
+    better exterior quality tend to command higher prices.
+
+-   BsmtQual (Correlation coefficient: 0.4609): The quality of the
+    basement is another influential factor. Houses with higher-quality
+    basements generally have higher SalePrices.
+
+-   KitchenQual (Correlation coefficient: 0.4591): The quality of the
+    kitchen is an essential aspect in determining the SalePrice. Houses
+    with better kitchen quality tend to have higher prices.
+
+-   MasVnrArea (Correlation coefficient: 0.4034): The masonry veneer
+    area in square feet has a significant correlation with the
+    SalePrice. Houses with larger masonry veneer areas typically have
+    higher prices.
+
+```{r,fig.width=8, fig.height = 4,include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
+
+# Remove unnecessary columns
+all_predictors <- combined_clean[, !(names(combined_clean) %in% c("Id", 
+                                                                  "isTrain"))]
+
+# Select numerical variables and handle missing values
+num_vars_intiger <- all_predictors[, sapply(all_predictors, is.integer)]
+num_vars_intiger <- na.omit(num_vars_intiger)
+# Generate the correlation plot
+corrplot(cor(num_vars_intiger), method = "number")
+
+# Select numerical variables and handle missing values
+num_vars_numeric <- all_predictors[, sapply(all_predictors, is.numeric)]
+num_vars_numeric <- na.omit(num_vars_numeric)
+
+# With this type visually more understandable correlation plot
+corrplot(cor(num_vars_numeric), method = "square", number.cex = 0.7, 
+         tl.cex = 0.7, tl.col = "black")
+```
+
+OBSERVATIONS;
+
+It seems that MSSubClass, LotFrontage, LotArea, TotalBsmtSF, X1stFlrSF,
+X2stFlrSF, GrLivArea, Fullbath, GarageCars, GarageArea,
+TotRmsAbvGrd,OverallQual, YearBuilt, YearRemodAdd, FullBath, Fireplaces
+have stronger corrolation with SalePrice compared to others.
+
+```{r, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE }
+# Closer look to relevant columns
+columns <- c("SalePrice", "MSSubClass", "LotFrontage", "LotArea", "TotalBsmtSF", 
+             "X1stFlrSF", "X2ndFlrSF", "GrLivArea", "FullBath", "GarageCars", 
+             "GarageArea", "TotRmsAbvGrd","OverallQual", "YearBuilt", 
+             "YearRemodAdd", "Fireplaces")
+
+# Compute the correlation matrix
+cor_matrix <- cor(combined_clean[columns], use = "complete.obs")
+
+# Plot the correlation matrix
+corrplot(cor_matrix, method = "circle", type = "upper")
+
+# Visualize the correlation matrix using corrplot.mixed
+corrplot.mixed(cor_matrix, upper = "circle", lower = "pie", tl.srt = 45,
+               number.cex = 1.2, tl.cex = 0.6)
+```
+
+OBSERVATIONS;
+
+From the corrplot above, we can see clearly the 10 variables with
+highest correlation to Sale price as in the order as followed:
+
+-   Overall Qual
+-   GrLivArea
+-   GarageCars and Garage Area (these 2 variables are quite similar)
+-   TotalBsmtSF
+-   X1st FlrSF
+-   Full Bath
+-   TotRmsAbvGrd (similar to GrLivArea variable)
+-   YearBuilt We can say that important house features that have high
+    influence to the Sale Price.
+
+Top 5 variables with highest correlation (in order, from highest to
+lowest): - GarageCars ve GarageArea - TotalBsmtSF ve X1stFlrSF -
+GrLivArea ve TotRmsAbvGrd - GrLivArea ve FullBath - LotFrontage ve
+LotArea
+
+A short recap of the meaning of these variables in our dataset: -
+GarageCars: Size of garage in car capacity - GarageArea: Size of garage
+in square feet - TotalBsmtSF: Total square feet of basement area -
+X1stFlrSF: The first floor area (in square feet) of a house - GrLivArea:
+Above grade (ground) living area square feet - TotRmsAbvGrd: Total rooms
+above grade (does not include bathrooms) - FullBath: Full bathrooms
+above grade - LotFrontage: The width of the lot at the front portion
+facing the street - LotArea: Lot size in square feet
+
+When we checked the correlation matrix results and the meaning of the
+variables; we decided to combine two set of variables:GarageCars with
+GarageArea and LotFrontage with LotArea.
+
+-   The categorical variables which have a high influence on SalePrice
+    are:SaleCondition, Neighborhood, Fence, GarageQual, ExterQual,
+    BsmtQual, KitchenQual, MasVnrArea, GarageFinish,GarageType,
+    Foundation, FireplaceQu, HeatingQC, BsmtFinType1, MasVnrType,
+    Exterior1st, Exterior2nd, MSZoning.
+
+-   The numeric variables which have a high influence on SalePrice are:
+    GrLivArea, GarageCars, GarageArea.
+
+-   The integer variables which have a high influence on SalePrice are:
+    OverallQual, YrSold, OverallCond.
+
+Since we also thought that below variables could be important for our
+analysis we also wanted to look closely them:
+
+TotalBsmtSF, X1stFlrSF, FullBath, YearBuilt, BsmtExposure, BsmtQual,
+ExterQual, Condition1 Street, Condition2, LotConfig, LandSlope,
+RoofStyle, RoofMatl, BsmtFinSF2, BsmtUnfSF, X2ndFlrSF
+
+To gain a better understanding of the relationship between them, we
+examine the relationships between each pair more closely by using ANOVA
+test.
+
+```{r,include=TRUE, warning = FALSE }
+# Define the variables for ANOVA
+variables <- c("TotalBsmtSF", "X1stFlrSF", "FullBath", "YearBuilt", "BsmtExposure", 
+               "BsmtQual", "ExterQual", "Condition1", "Street", "Condition2", 
+               "LotConfig", "LandSlope", "RoofStyle", "RoofMatl", "BsmtFinSF2", 
+               "BsmtUnfSF", "X2ndFlrSF")
+
+# Create an empty data frame to store ANOVA results
+anova_results <- data.frame(
+  Variable1 = character(),
+  Variable2 = character(),
+  F_Value = numeric(),
+  Pr_Value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Perform pairwise ANOVA tests
+for (i in 1:(length(variables)-1)) {
+  for (j in (i+1):length(variables)) {
+    variable1 <- variables[i]
+    variable2 <- variables[j]
+    
+    formula <- as.formula(paste("SalePrice ~", variable1, "*", variable2))
+    anova_result <- aov(formula, data = train_new)
+    
+    # Extract F-value and p-value
+    f_value <- summary(anova_result)[[1]]$F[1]
+    pr_value <- summary(anova_result)[[1]]$Pr[1]
+    
+    # Store results in the data frame
+    anova_results <- rbind(anova_results, data.frame(
+      Variable1 = variable1,
+      Variable2 = variable2,
+      F_Value = f_value,
+      Pr_Value = pr_value
+    ))
+  }
+}
+
+# Sort the ANOVA results by p-value in ascending order
+sorted_results <- anova_results[order(anova_results$Pr_Value), ]
+
+# Filter the top 15 most related variable pairs
+top_related <- sorted_results[1:15, ]
+
+top_related
+
+```
+
+plots for only these variables;
+
+```{r, fig.width=6, fig.height = 3,include=TRUE, warning = FALSE }
+# Select the categorical columns from the dataset (excluding 'SalePrice')
+categorical_columns <- combined_clean %>%
+  select(where(function(x) is.factor(x) || is.character(x))) %>%
+  select(-matches("Id|isTrain|SalePrice")) %>%
+  select(any_of(c("BsmtExposure", "BsmtQual", "ExterQual", "Condition1", 
+                  "Street", "Condition2", "LotConfig", "LandSlope", "RoofStyle", 
+                  "RoofMatl"))) %>%
+  names()
+
+# Select the numeric columns from the dataset (excluding 'Id' and 'isTrain')
+numeric_columns <- combined_clean %>%
+  select(where(is.numeric)) %>%
+  select(-matches("Id|isTrain")) %>%
+  select(any_of(c("TotalBsmtSF", "X1stFlrSF", "FullBath", "YearBuilt", 
+                  "BsmtFinSF2", "BsmtUnfSF", "X2ndFlrSF"))) %>%
+  names()
+
+# Create a new data frame with the necessary categorical columns
+data_categorical <- combined_clean[, c("SalePrice", categorical_columns)]
+
+# Create a new data frame with the necessary numeric columns
+data_numeric <- combined_clean[, c("SalePrice", numeric_columns)]
+
+# Remove rows with missing values
+data_numeric <- na.omit(data_numeric)
+
+# Plotting the bar charts for categorical variables and SalePrice
+for (col in categorical_columns) {
+  print(ggplot(data_categorical, aes(x = !!sym(col))) +
+          geom_bar(stat = "count", fill = "steelblue") +
+          labs(title = paste("Bar Chart of", col), x = col, y = "Frequency"))
+}
+
+# Plotting scatter plots for numeric variables and SalePrice
+for (col in numeric_columns) {
+  print(ggplot(data_numeric, aes(x = !!sym(col), y = SalePrice)) +
+          geom_point(shape = 4, color = "steelblue", alpha = 0.5) +
+          geom_smooth(method = "lm", se = FALSE, color = "red") +
+          labs(title = paste("Scatter Plot of", col, "vs SalePrice"), x = col, 
+               y = "SalePrice"))
+}
+```
+
+OBSERVATIONS;
+
+-   LandSlope represents the slope of the property.It indicates an
+    imbalanced frequency, with the majority of instances in the dataset
+    having the value 'Gtl' (Gentle slope).
+
+-   RoofMat1 represents the material used for the roofs of the houses in
+    the dataset. Among the different materials listed, the most common
+    choice is 'CompShg' (Standard Composite Shingle). This material has
+    a significantly higher frequency compared to the others, making it
+    dominant in the dataset.
+
+\-'Condition2' represents the proximity of the houses to various
+conditions when more than one condition is present.'Norm' has a higher
+frequency compared to the other conditions, resulting in an imbalanced
+distribution.
+
+\-'Street' represents the type of road access to the properties. The bar
+chart clearly shows a significant difference in frequency between the
+two categories, highlighting the dominance of paved road access in the
+dataset.
+
+\-'ExterQual' represent the evaluates the quality of the material on the
+exterior has high correlation with other features, (such as
+'Exterior1st', 'Exterior2nd', and 'ExterCond') that capture similar
+information about the exterior quality of the property.
+
+-   LandSlope, RoofMatl, Exterior2nd, Street, Condition2, all of these
+    variables have low correlation between SalePrice as we already know
+    from ANOVA Test.
+
+These imbalances in the data can lead to imbalanced classes and all the
+correlation between different variables could cause to
+multicollinearity. They can potentially impact our model's performance.
+We will address this issue during the model selection part.
+
+For the other varaibles among the ones that we are suspected that have
+good impact, they generally exhibits good pattern.
+
+```{r, fig.width=6, fig.height = 3,include=TRUE, warning = FALSE }
+# Identify variables that can be used with the "s" aesthetic
+
+s_variables <- c("GrLivArea", "GarageCars", "GarageArea","YrSold", "SaleCondition", 
+                 "Neighborhood", "Fence", "GarageQual","ExterQual", "OverallQual", 
+                 "OverallCond", "BsmtQual", "KitchenQual", "MasVnrArea", "GarageFinish",
+                 "GarageType", "Foundation", "FireplaceQu", "HeatingQC", "BsmtFinType1", 
+                 "MasVnrType", "Exterior1st", "Exterior2nd", "MSZoning","TotalBsmtSF", 
+                 "X1stFlrSF", "FullBath", "YearBuilt", "BsmtExposure", "BsmtQual", 
+                 "ExterQual", "Condition1")
+
+# Create ggplot visualizations for each selected variable
+for (variable in s_variables) {
+  plot <- ggplot(train_new, aes(x = as.factor(.data[[variable]]), y = SalePrice, fill = as.factor(.data[[variable]]))) +
+    geom_boxplot() +
+    labs(title = paste("Boxplot of SalePrice by", variable))
+  print(plot)
+}
+
+```
+
+OBSERVATIONS;
+
+-   YearSold: Also the box plot for various years shows the distribution
+    of Sale Price for each year. 2008 clearly reflects the Housing
+    Market Crisis. When we check the boxplot of YearSold - SalePrice we
+    saw that the highest and lowest Sale Price of houses were in 2008
+    (highest), and 2010 (lowest).
+
+-   YearBuilt: Original construction date. When we observed the result
+    in the analysis, we saw an increasing sales price as the year of
+    construction of the houses approaches the present day.
+
+-   OverallQual: The overall quality of the house, ranging from 1 to 10,
+    has a positive correlation with the sale price, meaning that higher
+    quality houses tend to have higher sale prices and in our boxplot,
+    we observed a constant increase in the SalePrice as the quality got
+    better.
+
+-   OverallCond: The overall condition of the house, ranging from 1 to
+    10, also has an impact on the sale price, where houses in better
+    condition generally fetch higher prices. In OverallCond - SalePrice
+    boxplot, we observed that the highest SalePrice belongs to the
+    "Average" condition (level 5), which was an unexpected result as it
+    is more likely to assume "Very Excellent" condition houses would
+    cost more.
+
+-   KitchenQual: The quality of the kitchen materials and finishes,
+    rated from "Ex" (Excellent) to "Po" (Poor), affects the sale price,
+    with houses having excellent or good kitchen quality commanding
+    higher prices.
+
+-   ExterQual: The quality of the exterior material, rated from "Ex"
+    (Excellent) to "Po" (Poor), is another factor influencing the sale
+    price, with houses having better exterior quality typically selling
+    at higher prices.
+
+-   GarageQual: The quality of the garage, rated from "Ex" (Excellent)
+    to "Po" (Poor), also affects the sale price. While one might assume
+    that houses with "Excellent" garage quality would cost the most, our
+    GarageQual- SalePrice boxplot shows that the highest price belongs
+    to the houses with "Good" garage quality, followed by "Average".
+
+-   GarageCars: The number of cars a garage can hold, ranging from 4 to
+    0 cars, is another factor affecting the sale price. In our analysis,
+    we detected that the houses with the highest Sale Price are the ones
+    who contain a garage with 3 car capacity, instead of 4.
+
+-   TotalBsmtSF: Total square feet of basement area. Our analysis shows
+    that SalePrice increases as the TotalBsmtSF gets bigger.
+
+-   GrLivArea: The sale price of the house tends to rise as the square
+    footage of the above-grade living area increases.
+
+```{r, figures-side, fig.width=4, fig.height = 2,include=TRUE, warning = FALSE}
+# Now lets check the histogram of SalePrice
+ggplot(train_new,aes(SalePrice))+geom_histogram()
+# It seems that SalePrice a little bit left-skewed but there it is negligible
+```
+
+# 3 LINEAR MODEL
+
+Here our linear model;
+
+```{r, include=TRUE, warning = FALSE }
+train_new2 <- data.frame(train_new)
+validate2 <- data.frame(validate)
+
+# Here we are removing them from training set. Because we also want to look 
+#validation set and see if there is overfit or not.If there is no validation 
+#set model is working without any problem but since there is different 
+#categories for the same variables below we had to exclude them from traning set.
+
+train_new2 <- train_new[, !names(train_new) %in% c("Condition2")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("RoofStyle")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("RoofMatl")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("MasVnrArea")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("Exterior2nd")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("Heating")]
+train_new2 <- train_new2[, !names(train_new2) %in% c("Electrical")]
+
+# Remove variables with only one level from training dataset
+single_level_vars <- sapply(train_new2, function(x) is.factor(x) 
+                            && length(levels(x)) <= 1)
+train_new2 <- train_new2[, !single_level_vars]
+
+# Fit the linear model (fit_1)
+fit_1 <- lm(SalePrice ~ ., data = train_new2)
+
+# Print the summary of the model (fit_1)
+summary(fit_1)
+
+# Perform prediction on the validate dataset using the linear model
+prediction <- predict(fit_1, newdata = validate2)
+
+# Calculate MSE for the linear model
+mse <- sqrt(mean((prediction - validate2$SalePrice)^2, na.rm = TRUE))
+cat("MSE for the linear model:", mse, "\n")
+
+# Visualize model results
+par(mfrow = c(2, 2))
+plot(fit_1)
+mtext("Model 1: ALL VARIABLES", side = 3, line = -28, outer = TRUE)
+par(mfrow = c(1, 1))
+```
+
+When a variable has a leverage value of one, it indicates that the
+corresponding observation has a high degree of influence on the
+estimated regression coefficients. These observations with leverage one
+can significantly impact the results of the regression analysis,
+particularly the estimated coefficients and the fitted values.
+
+In this particular case, the variables with leverage one were not
+removed before fitting the model, and a warning was allowed to appear.
+This decision was made to acknowledge and highlight the potential impact
+of these observations on the model's results. By not excluding these
+variables, we intentionally chose to include their influence in the
+analysis.
+
+OBSERVATIONS;
+
+As we can see our adjusted R-squared is near to 1 (is near to normal
+distribution) with the square root distribution
+
+R-Square: Measures the proportion of variability in y that can be
+explained using x, aim is to make r square near to one -\> measures of
+how regression predictions approximate real data points if it's = to 1
+means that RSS is equal to 0 (residual sum of squared) it means that our
+regression predictions fit very well the data.
+
+In a linear model, there are several important assumptions that need to
+be satisfied:
+
+-   Linearity: The relationship between the predictors (independent
+    variables) and the target variable (dependent variable) should be
+    linear. This means that the effect of changing the predictors on the
+    target variable is constant and proportional.
+
+-   Homoscedasticity: Homoscedasticity refers to the assumption that the
+    variance of the errors (residuals) should be constant across all
+    levels of the predictors. In other words, the spread of the
+    residuals should be the same regardless of the predicted values.
+    This assumption ensures that the errors are evenly distributed and
+    do not systematically change as the predicted values vary.
+
+-   Normality and Independence of Errors: The errors should follow a
+    normal distribution and be independent of each other. Normality
+    assumption implies that the distribution of the residuals should be
+    symmetric and bell-shaped. Independence assumption means that the
+    errors from one observation should not be related to the errors from
+    another observation. Violations of this assumption can lead to
+    biased and inefficient estimates.
+
+-   Residuals vs. Fitted plot: In this plot, we expect to see the
+    residuals randomly dispersed around the x-axis (usually around
+    zero). If there is a clear pattern or trend in the residuals, it
+    suggests a violation of the linearity assumption or the presence of
+    other issues in the model.
+
+-Quantile-Quantile (qq) plot: This plot helps assess the normality of
+the residuals. If the points in the qq plot deviate significantly from a
+straight line, it indicates departures from normality. Non-normality of
+residuals may affect the validity of statistical inference and
+prediction intervals.
+
+-   Leverage: Leverage refers to the influence of individual data points
+    on the model. High leverage values indicate data points that have a
+    strong impact on the estimated coefficients. These points can act as
+    outliers and affect the overall performance of the model.
+    Identifying high leverage points is important to ensure the
+    reliability of the model.
+
+# 3.2 REGULARIZED LINEAR MODEL
+
+Here our Regularized Linear Model;
+
+```{r, include=TRUE, warning = FALSE }
+# Create the train control object for cross-validation
+myTrainControl <- trainControl(method = "repeatedcv", number = 10, repeats = 4)
+
+# Define the range of alpha and lambda values for tuning
+alpha_values <- seq(0, 1, by = 0.05)
+lambda_values <- seq(0, 0.08, by = 0.02)
+
+# Fit the regularized linear model using glmnet
+fit.glmnet <- train(SalePrice ~ ., data = train_new2, 
+                    trControl = myTrainControl, method = "glmnet",
+                    tuneGrid = expand.grid(alpha = alpha_values,
+                                           lambda = lambda_values))
+
+summary(fit.glmnet)
+```
+
+```{r, include=TRUE, warning = FALSE }
+# Plot the coefficients (non-zero) against log(lambda)
+plot(fit.glmnet, xvar = "lambda", label = TRUE)
+
+# Plot the cross-validated mean squared error (CV RMSE) against log(lambda)
+plot(fit.glmnet, xvar = "lambda", metric = "RMSE")
+
+# Plot the cross-validated mean absolute error (CV MAE) against log(lambda)
+plot(fit.glmnet, xvar = "lambda", metric = "MAE")
+
+# Plot the cross-validated R-squared against log(lambda)
+plot(fit.glmnet, xvar = "lambda", metric = "Rsquared")
+
+# Perform prediction on the validate2 dataset using the regularized linear model
+prediction <- predict(fit.glmnet, newdata = validate2, type = "raw")
+
+# Calculate MSE for the regularized linear model
+mse <- sqrt(mean((prediction - validate2$SalePrice)^2, na.rm = TRUE))
+cat("MSE for the regularized linear model:", mse, "\n")
+
+# non-regularized model gived better mse score !!!!
+```
+
+The non-regularized model outperformed the regularized model in terms of
+mean squared error (MSE) score. This implies that the non-regularized
+model achieved better accuracy in predicting the target variable
+compared to the regularized model.
+
+# BACKWARD MODEL SELECTION
+
+In this step, we will perform backward model selection without
+considering the previously mentioned property combinations. The goal is
+to identify the most relevant features that significantly contribute to
+the predictive power of our model. By systematically removing variables
+from the model and evaluating the impact on model performance, we can
+determine the champion model.
+
+Once we have identified the champion model, we will incorporate the
+property combinations mentioned earlier and assess if their inclusion
+improves the model's performance. This analysis will help us determine
+whether the additional features derived from combining variables provide
+valuable insights and enhance the predictive capabilities of our model.
+
+By conducting this two-step process, we can ensure that we first
+establish a strong baseline model and then evaluate the incremental
+benefit of incorporating the combined property variables. This approach
+will enable us to make informed decisions about feature selection and
+assess the potential improvement gained from the inclusion of these
+engineered features.
+
+```{r, include=TRUE, warning = FALSE }
+# Here we will try backward model selection without considering above property. 
+#Then with the champion model,we will include above property and see if there is 
+#improvement or not
+
+fit_lm_1 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual
+               +KitchenQual+GarageFinish+GarageType+Foundation+FireplaceQu+
+                 HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+Exterior2nd+MSZoning+
+             +TotalBsmtSF+X1stFlrSF+FullBath+YearBuilt+BsmtExposure+
+               ExterQual+Condition1+I(LotArea^2)+
+             Street+Condition2+LotConfig+LandSlope+RoofStyle+RoofMatl+
+               BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+            ,train_new)
+# Print the summary of the model (fit_lm_1)
+summary(fit_lm_1)
+```
+
+```{r}
+#Removing LandSlope
+fit_lm_2 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual+
+                 KitchenQual+GarageFinish+GarageType+Foundation+FireplaceQu+
+                 HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+Exterior2nd+MSZoning+
+               +TotalBsmtSF+X1stFlrSF+FullBath+YearBuilt+BsmtExposure+ExterQual
+               +Condition1+I(LotArea^2)+Street+Condition2+LotConfig+RoofStyle+
+                 RoofMatl+BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+             ,train_new)
+# Print the summary of the model (fit_lm_2)
+summary(fit_lm_2)
+```
+
+```{r}
+#Removing RoofMat1
+fit_lm_3 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual+
+                 KitchenQual+GarageFinish+GarageType+Foundation+
+                 FireplaceQu+HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+
+                 Exterior2nd+MSZoning+TotalBsmtSF+X1stFlrSF+FullBath+YearBuilt+
+                 BsmtExposure+ExterQual+Condition1+I(LotArea^2)+Street+Condition2+
+                 LotConfig+RoofStyle+BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+               ,train_new)
+# Print the summary of the model (fit_lm_3)
+summary(fit_lm_3)
+```
+
+```{r, include=TRUE, warning = FALSE }
+#Removing Condition2
+fit_lm_4 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+
+                 OverallQual+OverallCond+BsmtQual+KitchenQual+GarageFinish+
+                 GarageType+Foundation+FireplaceQu+HeatingQC+BsmtFinType1+
+                 MasVnrType+Exterior1st+Exterior2nd+MSZoning+TotalBsmtSF+
+                 X1stFlrSF+FullBath+YearBuilt+BsmtExposure+ExterQual+
+                 Condition1+I(LotArea^2)+Street+LotConfig+RoofStyle+
+                 BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+               ,train_new)
+# Print the summary of the model (fit_lm_4)
+summary(fit_lm_4)
+```
+
+```{r, include=TRUE, warning = FALSE }
+#Removing Street
+fit_lm_5 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual+
+                 KitchenQual+GarageFinish+GarageType+Foundation+
+                 FireplaceQu+HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+
+                 Exterior2nd+MSZoning+TotalBsmtSF+X1stFlrSF+FullBath+YearBuilt+
+                 BsmtExposure+ExterQual+Condition1+I(LotArea^2)+
+                 LotConfig+RoofStyle+BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+               ,train_new)
+# Print the summary of the model (fit_lm_5)
+summary(fit_lm_5)
+```
+
+```{r, include=TRUE, warning = FALSE }
+#Removing ExterQual
+fit_lm_6 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual+
+                 KitchenQual+GarageFinish+GarageType+Foundation+FireplaceQu+
+                 HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+Exterior2nd+
+                 MSZoning+TotalBsmtSF+X1stFlrSF+FullBath+YearBuilt+BsmtExposure+
+                 Condition1+I(LotArea^2)+LotConfig+RoofStyle+BsmtFinSF2+BsmtUnfSF
+               +X2ndFlrSF,train_new)
+# Print the summary of the model (fit_lm_6)
+summary(fit_lm_6)
+```
+
+```{r, include=TRUE, warning = FALSE }
+#Removing Exterior2nd, FullBath
+fit_lm_7 <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition+
+                 Neighborhood+Fence+GarageQual+OverallQual+OverallCond+BsmtQual+
+                 KitchenQual+GarageFinish+GarageType+Foundation+
+                 FireplaceQu+HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+
+                 MSZoning+TotalBsmtSF+X1stFlrSF+YearBuilt+BsmtExposure+
+                 Condition1+I(LotArea^2)+LotConfig+RoofStyle+BsmtFinSF2+
+                 BsmtUnfSF+X2ndFlrSF
+               ,train_new)
+# Print the summary of the model (fit_lm_7)
+summary(fit_lm_7)
+```
+
+FEATURE ENGINEERING
+
+Feature engineering is an essential step in the data analysis process,
+where new variables are created by combining existing ones to capture
+additional information or create more meaningful features. In this
+project, we propose the following variable combinations:
+
+-   GarageCars ve GarageArea
+-   TotalBsmtSF ve X1stFlrSF
+-   GrLivArea ve TotRmsAbvGrd
+-   GrLivArea ve FullBath
+-   LotFrontage ve LotArea
+
+```{r, include=TRUE, warning = FALSE }
+
+fit_lm_8 <- lm(SalePrice~GrLivArea+I(GarageCars+GarageArea)+YrSold+
+                 SaleCondition+Neighborhood+Fence+GarageQual+
+                 OverallQual+OverallCond+BsmtQual+KitchenQual+GarageFinish+
+                 GarageType+Foundation+FireplaceQu+HeatingQC+BsmtFinType1+
+                 MasVnrType+Exterior1st+MSZoning+TotalBsmtSF+X1stFlrSF+
+                 YearBuilt+BsmtExposure+Condition1+I(LotArea^2)+
+                 LotConfig+RoofStyle+BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+               ,train_new)
+# Print the summary of the model (fit_lm_8)
+summary(fit_lm_8)
+
+```
+
+After performing backward model selection, we have determined that the
+7th model is the best model among the selected models. This model likely
+includes a subset of variables that have the most significant impact on
+predicting the target variable.
+
+Now, our next step is to compare the performance of the 7th model with a
+model that includes almost all variables. By excluding some variables
+from the nearly complete model, we can assess the effect of variable
+reduction on the model's predictive accuracy.
+
+To evaluate the models, we will calculate the mean squared error (MSE)
+for both the 7th model and the model with almost all variables. The MSE
+measures the average squared difference between the predicted and actual
+values of the target variable. Comparing the MSE values will give us an
+indication of which model performs better in terms of prediction
+accuracy.
+
+By conducting this comparison, we can determine whether the inclusion of
+additional variables in the nearly complete model significantly improves
+the model's performance compared to the 7th model, or if the 7th model's
+simplicity and reduced set of variables still provide satisfactory
+predictive results.
+
+```{r, include=TRUE, warning = FALSE }
+# Since we now want to look mse error on validation set and see if there is overfit 
+#or not compared to the model that we used all the varaibles, we now extracting some 
+#of the problematic variables as above.
+
+fit_lm_7_prime <- lm(SalePrice~GrLivArea+GarageCars+GarageArea+YrSold+SaleCondition
+                     +Neighborhood+Fence+GarageQual+
+                 OverallQual+OverallCond+BsmtQual+KitchenQual+GarageFinish+GarageType
+                 +Foundation+FireplaceQu+HeatingQC+BsmtFinType1+MasVnrType+Exterior1st+
+                   MSZoning+TotalBsmtSF+X1stFlrSF+YearBuilt+BsmtExposure+Condition1+
+                   I(LotArea^2)+LotConfig+BsmtFinSF2+BsmtUnfSF+X2ndFlrSF
+               ,train_new2)
+# Print the summary of the model (fit_lm_7)
+summary(fit_lm_7_prime)
+
+# Perform prediction on the validate dataset using the linear model
+prediction <- predict(fit_lm_7_prime, newdata = validate2)
+
+# Calculate MSE for the linear model
+mse <- sqrt(mean((prediction - validate2$SalePrice)^2, na.rm = TRUE))
+cat("MSE for the linear model:", mse, "\n")
+
+# visualize model results
+par(mfrow=c(2,2))
+plot(fit_lm_7)
+mtext("Model 1: ALL VARIABLES", side = 3, line = -28, outer = TRUE)
+par(mfrow=c(1,1))
+
+# Great!! we see improvement in the model selection part !!!
+```
+
+# TRAIN BEST MODEL WITH NO OUTLIERS
+
+In order to identify outliers in our data, we will examine the residuals
+of our model. Residuals represent the differences between the observed
+values and the predicted values from the model. By analyzing the
+distribution and patterns of the residuals, we can identify observations
+that deviate significantly from the expected behavior.
+
+One approach to identifying outliers is to set a threshold for the
+residuals. Observations with residuals exceeding this threshold are
+considered potential outliers. The choice of threshold will depend on
+the specific characteristics of our data and the context of our
+analysis. Plotting the residuals can provide visual insights into their
+distribution and help us determine an appropriate threshold.
+
+By identifying outliers, we can assess their impact on our model and
+decide how to handle them. Outliers may be influential data points that
+can significantly affect our model's performance and estimated
+coefficients. Therefore, it is important to carefully evaluate and
+address these observations to ensure the integrity and accuracy of our
+analysis.
+
+```{r, include=TRUE, warning = FALSE }
+
+outlier_threshold <- 0.70  # Adjust the threshold as needed
+outliers <- which(abs(fit_lm_7_prime$residuals) > outlier_threshold)
+
+# Display the count of outliers in fit_1
+cat("Number of outliers in fit_1:", length(outliers), "\n")
+
+# Remove outliers from the dataset
+train_no_outliers <- train_new2[-outliers, ]
+
+#Removing Exterior2nd, FullBath
+fit_1_NoOutlier <- lm(SalePrice ~ ., data = train_no_outliers)
+
+# Print the summary of the model without outliers (fit_2)
+# Here we can see a clear improvoment of our model !
+summary(fit_1_NoOutlier)
+
+# Perform prediction on the validate dataset using the linear model
+prediction <- predict(fit_1_NoOutlier, newdata = validate2)
+
+# Calculate MSE for the linear model
+mse <- sqrt(mean((prediction - validate2$SalePrice)^2, na.rm = TRUE))
+cat("MSE for the linear model:", mse, "\n")
+
+# visualize model results
+par(mfrow=c(2,2))
+plot(fit_1_NoOutlier)
+mtext("Model 7: ALL VARIABLES OUTLIER ELIMINATION", side = 3, line = -28, 
+      outer = TRUE)
+par(mfrow=c(1,1))
+
+# Here we see a little more improvoment !!
+```
+
+# PREDICTION
+
+```{r, include=TRUE, warning = FALSE }
+# Predict the SalePrice on the test dataset using fit_1_NoOutlier
+log_prediction <- predict(fit_1_NoOutlier, newdata = test)
+
+# Convert the predicted values back to the original scale
+actual_pred <- exp(log_prediction)
+
+# Fill the SalePrice column in the test dataset with the predictions
+test$SalePrice <- actual_pred
+
+test
+```
